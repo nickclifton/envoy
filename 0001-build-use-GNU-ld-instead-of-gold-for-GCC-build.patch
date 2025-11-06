@@ -1,0 +1,137 @@
+From 50ca392b829884747583e7811c82fc81b845470c Mon Sep 17 00:00:00 2001
+From: Tero Saarni <tero.saarni@est.tech>
+Date: Tue, 23 Sep 2025 10:13:17 +0300
+Subject: [PATCH] build: use GNU ld instead of gold for GCC build
+
+Gold is deprecated beginning from GNU binutils 2.44.  It is no longer
+included in standard binutils release and it is scheduled for complete
+removal.
+
+Signed-off-by: Tero Saarni <tero.saarni@est.tech>
+---
+ .bazelrc                                        | 10 +++++++---
+ bazel/rbe/toolchains/configs/linux/gcc/cc/BUILD |  5 ++---
+ bazel/rbe/toolchains/gcc.env.json               |  2 +-
+ bazel/rbe/toolchains/rbe_toolchains_config.bzl  |  2 +-
+ changelogs/current.yaml                         |  3 +++
+ test/server/config_validation/BUILD             |  1 +
+ 6 files changed, 15 insertions(+), 8 deletions(-)
+
+diff --git a/.bazelrc b/.bazelrc
+index b97e00632a..0a9546a236 100644
+--- a/.bazelrc
++++ b/.bazelrc
+@@ -76,7 +76,7 @@ build:linux --conlyopt=-fexceptions
+ build:linux --fission=dbg,opt
+ build:linux --features=per_object_debug_info
+ build:linux --action_env=BAZEL_LINKLIBS=-l%:libstdc++.a
+-build:linux --action_env=BAZEL_LINKOPTS=-lm:-fuse-ld=gold
++build:linux --action_env=BAZEL_LINKOPTS=-lm:-fuse-ld=bfd
+ 
+ # We already have absl in the build, define absl=1 to tell googletest to use absl for backtrace.
+ build --define absl=1
+@@ -109,7 +109,7 @@ build:clang-pch --define=ENVOY_CLANG_PCH=1
+ build:libstdc++ --@envoy//bazel:libc++=false
+ build:libstdc++ --@envoy//bazel:libstdc++=true
+ 
+-# Use gold linker for gcc compiler.
++# Gcc with libstdc++
+ build:gcc --config=libstdc++
+ build:gcc --test_env=HEAPCHECK=
+ build:gcc --action_env=BAZEL_COMPILER=gcc
+@@ -127,7 +127,11 @@ build:gcc --cxxopt=-Wno-missing-requires
+ build:gcc --cxxopt=-Wno-dangling-reference
+ build:gcc --cxxopt=-Wno-nonnull-compare
+ build:gcc --incompatible_enable_cc_toolchain_resolution=false
+-build:gcc --linkopt=-fuse-ld=gold --host_linkopt=-fuse-ld=gold
++build:gcc --linkopt=-fuse-ld=bfd --host_linkopt=-fuse-ld=bfd
++build:gcc --features=-supports_start_end_lib --host_features=-supports_start_end_lib
++# Optimize for memory usage during linking to avoid OOM kills.
++build:gcc --linkopt=-Wl,--no-keep-memory
++build:gcc --linkopt=-Wl,--reduce-memory-overheads
+ 
+ # Clang-tidy
+ # TODO(phlax): enable this, its throwing some errors as well as finding more issues
+diff --git a/bazel/rbe/toolchains/configs/linux/gcc/cc/BUILD b/bazel/rbe/toolchains/configs/linux/gcc/cc/BUILD
+index f2d1b9c8b0..b9545f74fe 100755
+--- a/bazel/rbe/toolchains/configs/linux/gcc/cc/BUILD
++++ b/bazel/rbe/toolchains/configs/linux/gcc/cc/BUILD
+@@ -101,13 +101,12 @@ cc_toolchain_config(
+     dbg_compile_flags = ["-g"],
+     host_system_name = "local",
+     link_flags = [
+-        "-fuse-ld=lld",
++        "-fuse-ld=bfd",
+         "-Wl,-no-as-needed",
+         "-Wl,-z,relro,-z,now",
+         "-B/usr/bin",
+         "-pass-exit-codes",
+         "-lm",
+-        "-fuse-ld=gold",
+     ],
+     link_libs = ["-l:libstdc++.a"],
+     opt_compile_flags = [
+@@ -119,7 +118,7 @@ cc_toolchain_config(
+         "-fdata-sections",
+     ],
+     opt_link_flags = ["-Wl,--gc-sections"],
+-    supports_start_end_lib = True,
++    supports_start_end_lib = False,
+     target_libc = "local",
+     target_system_name = "local",
+     tool_paths = {
+diff --git a/bazel/rbe/toolchains/gcc.env.json b/bazel/rbe/toolchains/gcc.env.json
+index a31c1836db..ec99d3799c 100644
+--- a/bazel/rbe/toolchains/gcc.env.json
++++ b/bazel/rbe/toolchains/gcc.env.json
+@@ -1,7 +1,7 @@
+ {
+   "BAZEL_COMPILER": "gcc",
+   "BAZEL_LINKLIBS": "-l%:libstdc++.a",
+-  "BAZEL_LINKOPTS": "-lm:-fuse-ld=gold",
++  "BAZEL_LINKOPTS": "-lm:-fuse-ld=bfd",
+   "CC": "gcc",
+   "CXX": "g++",
+   "PATH": "/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/llvm/bin"
+diff --git a/bazel/rbe/toolchains/rbe_toolchains_config.bzl b/bazel/rbe/toolchains/rbe_toolchains_config.bzl
+index f7ff2b6888..699a2d3ded 100644
+--- a/bazel/rbe/toolchains/rbe_toolchains_config.bzl
++++ b/bazel/rbe/toolchains/rbe_toolchains_config.bzl
+@@ -31,7 +31,7 @@ _CLANG_LIBCXX_ENV = dicts.add(_CLANG_ENV, {
+ _GCC_ENV = {
+     "BAZEL_COMPILER": "gcc",
+     "BAZEL_LINKLIBS": "-l%:libstdc++.a",
+-    "BAZEL_LINKOPTS": "-lm:-fuse-ld=gold",
++    "BAZEL_LINKOPTS": "-lm:-fuse-ld=bfd",
+     "CC": "gcc",
+     "CXX": "g++",
+     "PATH": "/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/llvm/bin",
+diff --git a/changelogs/current.yaml b/changelogs/current.yaml
+index 542b2f0e5e..4172ccfc73 100644
+--- a/changelogs/current.yaml
++++ b/changelogs/current.yaml
+@@ -94,6 +94,9 @@ minor_behavior_changes:
+     Cap the frame size for streamed grpc at 1MB. Without this change there was a small chance
+     that if a request streamed in sufficiently faster than it was processed, a frame larger than
+     4MB could be encoded, which most upstream grpc services would, by default, treat as an error.
++- area: build
++  change: |
++    GCC build now use GNU ld. The gold linker was deprecated in binutils 2.44.
+ 
+ bug_fixes:
+ # *Changes expected to improve the state of the world and are unlikely to have negative effects*
+diff --git a/test/server/config_validation/BUILD b/test/server/config_validation/BUILD
+index d6fd1c8f27..92c7c18f6b 100644
+--- a/test/server/config_validation/BUILD
++++ b/test/server/config_validation/BUILD
+@@ -93,6 +93,7 @@ envoy_cc_fuzz_test(
+     size = "large",
+     srcs = ["config_fuzz_test.cc"],
+     corpus = "//test/server:server_fuzz_test_corpus",
++    rbe_pool = "6gig",
+     deps = [
+         "//source/common/common:thread_lib",
+         "//source/server/config_validation:server_lib",
+-- 
+2.51.0
+

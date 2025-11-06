@@ -91,6 +91,7 @@ public:
   VirtualHostRoute route(const Http::RequestHeaderMap& headers,
                          const Envoy::StreamInfo::StreamInfo& stream_info,
                          uint64_t random_value) const override {
+
     setupRouteConfig(headers, random_value);
     return ConfigImpl::route(headers, stream_info, random_value);
   }
@@ -98,6 +99,7 @@ public:
   VirtualHostRoute route(const RouteCallback& cb, const Http::RequestHeaderMap& headers,
                          const StreamInfo::StreamInfo& stream_info,
                          uint64_t random_value) const override {
+
     setupRouteConfig(headers, random_value);
     return ConfigImpl::route(cb, headers, stream_info, random_value);
   }
@@ -6132,11 +6134,6 @@ virtual_hosts:
   factory_context_.cluster_manager_.initializeClusters({"www2"}, {});
   TestConfigImpl config(parseRouteConfigurationFromYaml(yaml), factory_context_, true,
                         creation_status_);
-  if (creation_status_ != absl::OkStatus())
-    {
-      return;
-    }
-  
   EXPECT_EQ(nullptr, config.route(genRedirectHeaders("www.foo.com", "/foo", true, true), 0).route);
   {
     Http::TestRequestHeaderMapImpl headers = genRedirectHeaders("www.lyft.com", "/foo", true, true);

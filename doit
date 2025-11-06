@@ -1,0 +1,19 @@
+# echo "build:clang --copt --gcc-toolchain=/usr" >> .bazelrc
+
+# BUILDING ...
+
+# bazel build -c opt envoy --jobs=1 --config=gcc --cxxopt=-Wno-missing-requires --cxxopt=-Wno-dangling-reference --cxxopt=-Wno-nonnull-compare --copt=-Wno-error=restrict --copt=-Wno-error=uninitialized --copt=-Wno-implicit-function-declaration
+
+
+# TESTING...
+
+# bazel test //test/... --jobs=1 --config=gcc --cxxopt=-Wno-missing-requires --cxxopt=-Wno-dangling-reference --cxxopt=-Wno-nonnull-compare --copt=-Wno-error=restrict --copt=-Wno-error=uninitialized --copt=-Wno-implicit-function-declaration --keep_going
+
+# bazel test //test/... --jobs=1 --config=clang --copt=-Wno-error=uninitialized --copt=-Wno-implicit-function-declaration --copt=-Wno-nullability-completeness --keep_going
+
+# SPECIFIC TESTING ...
+
+# bazel test //test/common/router:corpus_from_config_impl --jobs=1 --config=gcc --cxxopt=-Wno-missing-requires --cxxopt=-Wno-dangling-reference --cxxopt=-Wno-nonnull-compare --copt=-Wno-error=restrict --copt=-Wno-error=uninitialized --copt=-Wno-implicit-function-declaration
+
+bazel test //test/common/router:corpus_from_config_impl --jobs=1 --config=clang --copt=-Wno-error=uninitialized --copt=-Wno-implicit-function-declaration --copt=-Wno-nullability-completeness
+

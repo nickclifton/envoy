@@ -1,0 +1,36 @@
+[ RUN      ] RouteMatcherTest.DirectResponse
+Caught Segmentation fault, suspect faulting address 0x10
+Backtrace (use tools/stack_decode.py to get line numbers):
+Envoy version: 0/1.36.0-dev/test/DEBUG/BoringSSL
+#0: Envoy::SignalAction::sigHandler() [0x2394e0a]
+#1: __restore_rt [0x14c3ffdbd450]
+#2: absl::lts_20250814::container_internal::raw_hash_set<>::capacity() [0x70c6b8]
+#3: absl::lts_20250814::container_internal::raw_hash_set<>::AssertNotDebugCapacity() [0x779d32]
+#4: absl::lts_20250814::container_internal::raw_hash_set<>::size() [0x75aed2]
+#5: absl::lts_20250814::container_internal::raw_hash_set<>::empty() [0x70c72c]
+#6: Envoy::Router::RouteMatcher::findVirtualHost() [0x1581878]
+#7: Envoy::Router::RouteMatcher::route() [0x1581c15]
+#8: Envoy::Router::ConfigImpl::route() [0x15830e1]
+#9: Envoy::Router::(anonymous namespace)::TestConfigImpl::route() [0x4128c3]
+#10: Envoy::Router::ConfigImpl::route() [0x548bbe]
+#11: Envoy::Router::(anonymous namespace)::TestConfigImpl::route() [0x412860]
+#12: Envoy::Router::(anonymous namespace)::TestConfigImpl::route() [0x412a3a]
+#13: Envoy::Router::(anonymous namespace)::RouteMatcherTest_DirectResponse_Test::TestBody() [0x48ae55]
+#14: testing::internal::HandleSehExceptionsInMethodIfSupported<>() [0x306a1a1]
+#15: testing::internal::HandleExceptionsInMethodIfSupported<>() [0x3064319]
+#16: testing::Test::Run() [0x3044799]
+#17: testing::TestInfo::Run() [0x30451e8]
+#18: testing::TestSuite::Run() [0x3045af4]
+#19: testing::internal::UnitTestImpl::RunAllTests() [0x305595a]
+#20: testing::internal::HandleSehExceptionsInMethodIfSupported<>() [0x306b684]
+#21: testing::internal::HandleExceptionsInMethodIfSupported<>() [0x3065373]
+#22: testing::UnitTest::Run() [0x3053a29]
+#23: RUN_ALL_TESTS() [0x1eb1cc6]
+#24: Envoy::TestRunner::runTests() [0x1eb0f73]
+#25: main [0x1eaeb5e]
+#26: __libc_start_call_main [0x14c3ffda6448]
+#27: __libc_start_main@GLIBC_2.2.5 [0x14c3ffda650b]
+#28: _start [0x411da5]
+
+
+

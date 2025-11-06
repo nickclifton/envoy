@@ -1,0 +1,39 @@
+--- source/common/router/config_impl.cc
++++ source/common/router/config_impl.cc
+@@ -1818,6 +1820,7 @@ const VirtualHostImpl* RouteMatcher::findVirtualHost(const Http::RequestHeaderMa
+ 
+   // If 'ignore_port_in_host_matching' is set, ignore the port number in the host header(if any).
+   absl::string_view host_header_value = headers.getHostValue();
++  
+   if (ignorePortInHostMatching()) {
+     if (const absl::string_view::size_type port_start =
+             Http::HeaderUtility::getPortStart(host_header_value);
+@@ -1909,16 +1912,19 @@ CommonConfigImpl::CommonConfigImpl(const envoy::config::route::v3::RouteConfigur
+                                           DEFAULT_MAX_DIRECT_RESPONSE_BODY_SIZE_BYTES)),
+       uses_vhds_(config.has_vhds()),
+       most_specific_header_mutations_wins_(config.most_specific_header_mutations_wins()),
+-      ignore_path_parameters_in_path_matching_(config.ignore_path_parameters_in_path_matching()) {
+-  if (!config.request_mirror_policies().empty()) {
+-    shadow_policies_.reserve(config.request_mirror_policies().size());
+-    for (const auto& mirror_policy_config : config.request_mirror_policies()) {
+-      auto policy_or_error = ShadowPolicyImpl::create(mirror_policy_config);
+-      SET_AND_RETURN_IF_NOT_OK(policy_or_error.status(), creation_status);
+-      shadow_policies_.push_back(std::move(policy_or_error.value()));
++      ignore_path_parameters_in_path_matching_(config.ignore_path_parameters_in_path_matching())
++{  
++  if (!config.request_mirror_policies().empty())
++    {
++      shadow_policies_.reserve(config.request_mirror_policies().size());
++      for (const auto& mirror_policy_config : config.request_mirror_policies())
++	{
++	  auto policy_or_error = ShadowPolicyImpl::create(mirror_policy_config);
++	  SET_AND_RETURN_IF_NOT_OK(policy_or_error.status(), creation_status);
++	  shadow_policies_.push_back(std::move(policy_or_error.value()));
++	}
+     }
+-  }
+-
++ 
+   // Initialize all cluster specifier plugins before creating route matcher. Because the route may
+   // reference it by name.
+   for (const auto& plugin_proto : config.cluster_specifier_plugins()) {
