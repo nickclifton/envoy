@@ -574,6 +574,7 @@ def _impl(ctx):
                 actions = all_link_actions + lto_index_actions,
                 flag_groups = [
                     flag_group(
+                        flags = ["-Wl,--gdb-index"],
                         expand_if_available = "is_using_fission",
                     ),
                 ],

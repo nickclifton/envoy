@@ -1873,13 +1873,11 @@ RouteMatcher::RouteMatcher(const envoy::config::route::v3::RouteConfiguration& r
   }
 }
 
-const VirtualHostImpl* RouteMatcher::findVirtualHost(const Http::RequestHeaderMap& headers) const
-{
+const VirtualHostImpl* RouteMatcher::findVirtualHost(const Http::RequestHeaderMap& headers) const {
   // Fast path the case where we only have a default virtual host.
-  if (virtual_hosts_.empty()
-      && wildcard_virtual_host_suffixes_.empty()
-      && wildcard_virtual_host_prefixes_.empty()) {
-      return default_virtual_host_.get();
+  if (virtual_hosts_.empty() && wildcard_virtual_host_suffixes_.empty() &&
+      wildcard_virtual_host_prefixes_.empty()) {
+    return default_virtual_host_.get();
   }
 
   absl::string_view host_header_value;
@@ -2073,8 +2071,7 @@ ConfigImpl::create(const envoy::config::route::v3::RouteConfiguration& config,
 ConfigImpl::ConfigImpl(const envoy::config::route::v3::RouteConfiguration& config,
                        Server::Configuration::ServerFactoryContext& factory_context,
                        ProtobufMessage::ValidationVisitor& validator,
-                       bool validate_clusters_default, absl::Status& creation_status)
-{
+                       bool validate_clusters_default, absl::Status& creation_status) {
   auto config_or_error = CommonConfigImpl::create(config, factory_context, validator);
   SET_AND_RETURN_IF_NOT_OK(config_or_error.status(), creation_status);
   shared_config_ = std::move(config_or_error.value());
@@ -2082,9 +2079,7 @@ ConfigImpl::ConfigImpl(const envoy::config::route::v3::RouteConfiguration& confi
   auto matcher_or_error = RouteMatcher::create(
       config, shared_config_, factory_context, validator,
       PROTOBUF_GET_WRAPPED_OR_DEFAULT(config, validate_clusters, validate_clusters_default));
-
   SET_AND_RETURN_IF_NOT_OK(matcher_or_error.status(), creation_status);
-
   route_matcher_ = std::move(matcher_or_error.value());
 }
 
